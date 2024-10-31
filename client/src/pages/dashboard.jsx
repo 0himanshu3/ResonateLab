@@ -14,6 +14,7 @@ import clsx from "clsx";
 import { Chart } from "../components/Chart";
 import { BGS, PRIOTITYSTYELS, TASK_TYPE, getInitials } from "../utils";
 import UserInfo from "../components/UserInfo";
+import  { useEffect, useState } from "react";
 
 const TaskTable = ({ tasks }) => {
   const ICONS = {
@@ -82,10 +83,16 @@ const TaskTable = ({ tasks }) => {
         <table className='w-full'>
           <TableHeader />
           <tbody>
-            {tasks?.map((task, id) => (
-              <TableRow key={id} task={task} />
-            ))}
-          </tbody>
+  {tasks?.length > 0 ? (
+    tasks.map((task, id) => <TableRow key={id} task={task} />)
+  ) : (
+    <tr>
+      <td colSpan="4" className="text-center text-gray-500 py-4">
+        No tasks available
+      </td>
+    </tr>
+  )}
+</tbody>
         </table>
       </div>
     </>
@@ -146,8 +153,39 @@ const UserTable = ({ users }) => {
   );
 };
 const Dashboard = () => {
-  const totals = summary.tasks;
-
+  const [summary, setSummary] = useState({});
+  const [tasks, setTasks] = useState([]);
+  const [users, setUsers] = useState([]);
+  // const stats = [
+  //   {
+  //     _id: "1",
+  //     label: "TOTAL TASK",
+  //     total: summary?.totalTasks || 0,
+  //     icon: <FaNewspaper />,
+  //     bg: "bg-[#1d4ed8]",
+  //   },
+  //   {
+  //     _id: "2",
+  //     label: "COMPLTED TASK",
+  //     total: totals["completed"] || 0,
+  //     icon: <MdAdminPanelSettings />,
+  //     bg: "bg-[#0f766e]",
+  //   },
+  //   {
+  //     _id: "3",
+  //     label: "TASK IN PROGRESS ",
+  //     total: totals["in progress"] || 0,
+  //     icon: <LuClipboardEdit />,
+  //     bg: "bg-[#f59e0b]",
+  //   },
+  //   {
+  //     _id: "4",
+  //     label: "TODOS",
+  //     total: totals["todo"],
+  //     icon: <FaArrowsToDot />,
+  //     bg: "bg-[#be185d]" || 0,
+  //   },
+  // ];
   const stats = [
     {
       _id: "1",
@@ -158,26 +196,51 @@ const Dashboard = () => {
     },
     {
       _id: "2",
-      label: "COMPLTED TASK",
-      total: totals["completed"] || 0,
+      label: "COMPLETED TASK",
+      total: summary?.tasks?.completed || 0,
       icon: <MdAdminPanelSettings />,
       bg: "bg-[#0f766e]",
     },
     {
       _id: "3",
-      label: "TASK IN PROGRESS ",
-      total: totals["in progress"] || 0,
+      label: "TASK IN PROGRESS",
+      total: summary?.tasks?.inProgress || 0,
       icon: <LuClipboardEdit />,
       bg: "bg-[#f59e0b]",
     },
     {
       _id: "4",
       label: "TODOS",
-      total: totals["todo"],
+      total: summary?.tasks?.todo || 0,
       icon: <FaArrowsToDot />,
-      bg: "bg-[#be185d]" || 0,
+      bg: "bg-[#be185d]",
     },
   ];
+  
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const taskRes = await axios.get("/api/task/");
+        const userRes = await axios.get("/api/user/user-info");
+
+        if (taskRes.data.success) {
+          setTasks(taskRes.data.tasks);
+          setSummary({
+            totalTasks: taskRes.data.totalTasks,
+            tasks: taskRes.data.summary,
+          });
+        }
+
+        if (userRes.data.success) {
+          setUsers([userRes.data.user]); // Format as an array if needed for your UserTable component
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      }
+    };
+
+    fetchUserData();
+  }, []);
 
   const Card = ({ label, count, bg, icon }) => {
     return (
@@ -200,7 +263,7 @@ const Dashboard = () => {
     );
   };
   return (
-    <div classNamee='h-full py-4'>
+    <div className='h-full py-4'>
       <div className='grid grid-cols-1 md:grid-cols-4 gap-5'>
         {stats.map(({ icon, bg, label, total }, index) => (
           <Card key={index} icon={icon} bg={bg} label={label} count={total} />

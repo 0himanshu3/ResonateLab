@@ -33,7 +33,6 @@ const taskSchema = new Schema(
         by: { type: Schema.Types.ObjectId, ref: "User" },
       },
     ],
-
     subTasks: [
       {
         title: String,
@@ -42,7 +41,11 @@ const taskSchema = new Schema(
       },
     ],
     assets: [String],
-    team: [{ type: Schema.Types.ObjectId, ref: "User" }],
+    team: { 
+      id: { type: Schema.Types.ObjectId, ref: "Team", required: true }, 
+      members: [{ type: String }]
+    },
+    assignedMembers: [{ type: String }],
     isTrashed: { type: Boolean, default: false },
   },
   { timestamps: true }

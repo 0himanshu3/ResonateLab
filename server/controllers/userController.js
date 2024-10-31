@@ -5,7 +5,7 @@ import Notice from "../models/notification.js";
 
 export const registerUser = async (req, res) => {
   try {
-    const { name, email, password, isAdmin, role, title } = req.body;
+    const { name, email, password, role, title } = req.body;
 
     const userExist = await User.findOne({ email });
 
@@ -20,13 +20,11 @@ export const registerUser = async (req, res) => {
       name,
       email,
       password,
-      isAdmin,
       role,
       title,
     });
 
     if (user) {
-      isAdmin ? createJWT(res, user._id) : null;
 
       user.password = undefined;
 
@@ -41,13 +39,50 @@ export const registerUser = async (req, res) => {
     return res.status(400).json({ status: false, message: error.message });
   }
 };
+export const getUserInfo = async (req, res) => {
+  try {
+    const { userId } = req.user;
+
+    const user = await User.findById(userId).select("name email role title isActive");
+
+    if (user) {
+      res.status(200).json({ status: true, user });
+    } else {
+      res.status(404).json({ status: false, message: "User not found" });
+    }
+  } catch (error) {
+    console.log(error);
+    return res.status(400).json({ status: false, message: error.message });
+  }
+};
+export const getInfobyEmail = async (req, res) => {
+  try {
+    const { memberEmail } = req.query; 
+
+    if (!memberEmail) {
+      return res.status(400).json({ status: false, message: "memberEmail is required" });
+    }
+
+    const user = await User.findOne({ email: memberEmail }); 
+    console.log("User is", user);
+    if (user) {
+      return res.status(200).json({ status: true, user });
+    } else {
+      return res.status(404).json({ status: false, message: "User not found" });
+    }
+  } catch (error) {
+    console.error("Error in getInfobymemberEmail:", error);
+    return res.status(400).json({ status: false, message: "Error fetching user data" });
+  }
+};
+
+
 
 export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
     const user = await User.findOne({ email });
-
     if (!user) {
       return res
         .status(401)
@@ -68,7 +103,7 @@ export const loginUser = async (req, res) => {
 
       user.password = undefined;
 
-      res.status(200).json(user);
+      res.status(200).json({ success: true, user });
     } else {
       return res
         .status(401)
@@ -123,15 +158,10 @@ export const getNotificationsList = async (req, res) => {
 
 export const updateUserProfile = async (req, res) => {
   try {
-    const { userId, isAdmin } = req.user;
+    const { userId } = req.user;
     const { _id } = req.body;
 
-    const id =
-      isAdmin && userId === _id
-        ? userId
-        : isAdmin && userId !== _id
-        ? _id
-        : userId;
+    const id = userId === _id ? userId : _id;
 
     const user = await User.findById(id);
 

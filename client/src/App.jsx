@@ -11,13 +11,16 @@ import Login from "./pages/Login";
 import TaskDetails from "./pages/TaskDetails";
 import Tasks from "./pages/Tasks";
 import Trash from "./pages/Trash";
-import Users from "./pages/Users";
+import Teams from "./pages/Teams";
 import Dashboard from "./pages/dashboard";
+import ProfilePage from "./pages/ProfilePage";
 import { setOpenSidebar } from "./redux/slices/authSlice";
+import Home from "./pages/Home";
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 function Layout() {
   const { user } = useSelector((state) => state.auth);
-
   const location = useLocation();
 
   return user ? (
@@ -30,14 +33,13 @@ function Layout() {
 
       <div className='flex-1 overflow-y-auto'>
         <Navbar />
-
         <div className='p-4 2xl:px-10'>
           <Outlet />
         </div>
       </div>
     </div>
   ) : (
-    <Navigate to='/log-in' state={{ from: location }} replace />
+    <Navigate to='/home' state={{ from: location }} replace />
   );
 }
 
@@ -90,25 +92,28 @@ const MobileSidebar = () => {
       </Transition>
     </>
   );
-};
+}
 
 function App() {
   return (
     <main className='w-full min-h-screen bg-[#f3f4f6] '>
+      <ToastContainer />
       <Routes>
         <Route element={<Layout />}>
-          <Route index path='/' element={<Navigate to='/dashboard' />} />
+          <Route index path='/' element={<Navigate to='/home' />} />
           <Route path='/dashboard' element={<Dashboard />} />
           <Route path='/tasks' element={<Tasks />} />
           <Route path='/completed/:status' element={<Tasks />} />
           <Route path='/in-progress/:status' element={<Tasks />} />
           <Route path='/todo/:status' element={<Tasks />} />
-          <Route path='/team' element={<Users />} />
+          <Route path='/team' element={<Teams />} />
           <Route path='/trashed' element={<Trash />} />
           <Route path='/task/:id' element={<TaskDetails />} />
         </Route>
 
         <Route path='/log-in' element={<Login />} />
+        <Route path='/user-profile' element={<ProfilePage />} />
+        <Route path='home' element={<Home />} />
       </Routes>
 
       <Toaster richColors />

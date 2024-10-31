@@ -4,20 +4,19 @@ import User from "../models/user.js";
 
 export const createTask = async (req, res) => {
   try {
+    console.log("req is", req.body); // Log req.body instead of req
     const { userId } = req.user;
 
-    const { title, team, stage, date, priority, assets } = req.body;
+    const { title, team, stage, date, priority, assets, assignedMembers, teamId } = req.body;
 
     let text = "New task has been assigned to you";
     if (team?.length > 1) {
-      text = text + ` and ${team?.length - 1} others.`;
+      text = text + ` and ${team.length - 1} others.`;
     }
 
     text =
       text +
-      ` The task priority is set a ${priority} priority, so check and act accordingly. The task date is ${new Date(
-        date
-      ).toDateString()}. Thank you!!!`;
+      ` The task priority is set as ${priority} priority, so check and act accordingly. The task date is ${new Date(date).toDateString()}. Thank you!!!`;
 
     const activity = {
       type: "assigned",
@@ -25,30 +24,35 @@ export const createTask = async (req, res) => {
       by: userId,
     };
 
+    // Create the task
     const task = await Task.create({
       title,
-      team,
+      team: {
+        id: team.id, // Save team ID as a reference
+        members: team.members.map(memberArray => memberArray[0].email),// Save team members
+      },
       stage: stage.toLowerCase(),
       date,
       priority: priority.toLowerCase(),
       assets,
-      activities: activity,
+      activities: [activity], // Wrap in an array
+      assignedMembers, // Save the array of assigned user emails or IDs
     });
 
+    // Create the notice
     await Notice.create({
       team,
       text,
       task: task._id,
     });
 
-    res
-      .status(200)
-      .json({ status: true, task, message: "Task created successfully." });
+    res.status(200).json({ status: true, task, message: "Task created successfully." });
   } catch (error) {
     console.log(error);
     return res.status(400).json({ status: false, message: error.message });
   }
 };
+
 
 export const duplicateTask = async (req, res) => {
   try {

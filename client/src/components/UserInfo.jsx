@@ -1,15 +1,16 @@
 import { Popover, Transition } from "@headlessui/react";
 import React, { Fragment } from "react";
-import { getInitials } from "../utils";
+// import { getInitials } from "../utils";
 
 const UserInfo = ({ user }) => {
+  const initials = user;
   return (
     <div className='px-4'>
       <Popover className='relative'>
         {/* {({ open }) => ( */}
         <>
           <Popover.Button className='group inline-flex items-center outline-none'>
-            <span>{getInitials(user?.name)}</span>
+            <span>{initials}</span>
           </Popover.Button>
 
           <Transition
@@ -25,7 +26,7 @@ const UserInfo = ({ user }) => {
               <div className='flex items-center gap-4 rounded-lg shadow-lg bg-white p-8'>
                 <div className='w-16 h-16 bg-blue-600 rounded-full text-white flex items-center justify-center text-2xl '>
                   <span className='text-center font-bold'>
-                    {getInitials(user?.name)}
+                    {user}
                   </span>
                 </div>
                 <div className='flex flex-col gap-y-1'>

@@ -1,10 +1,10 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { user } from "../../assets/data";
+// import { user } from "../../assets/data"; // Commenting out or removing this import
 
 const initialState = {
   user: localStorage.getItem("userInfo")
     ? JSON.parse(localStorage.getItem("userInfo"))
-    : user,
+    : null, // Set to null instead of user
 
   isSidebarOpen: false,
 };

@@ -14,18 +14,11 @@ import {
 import { RxActivityLog } from "react-icons/rx";
 import { useParams } from "react-router-dom";
 import { toast } from "sonner";
-import { tasks } from "../assets/data";
 import Tabs from "../components/Tabs";
 import { PRIOTITYSTYELS, TASK_TYPE, getInitials } from "../utils";
 import Loading from "../components/Loader";
 import Button from "../components/Button";
-
-const assets = [
-  "https://images.pexels.com/photos/2418664/pexels-photo-2418664.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
-  "https://images.pexels.com/photos/8797307/pexels-photo-8797307.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
-  "https://images.pexels.com/photos/2534523/pexels-photo-2534523.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
-  "https://images.pexels.com/photos/804049/pexels-photo-804049.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
-];
+import { useFetchTaskByIdQuery } from "../redux/slices/apiSlice";
 
 const ICONS = {
   high: <MdKeyboardDoubleArrowUp />,
@@ -88,13 +81,21 @@ const act_types = [
 
 const TaskDetails = () => {
   const { id } = useParams();
-
+ 
+  const { data: task, error, isLoading } = useFetchTaskByIdQuery(id);
+   const taskdata=task?.task;
   const [selected, setSelected] = useState(0);
-  const task = tasks[3];
+  if (isLoading) return <Loading />;
+  if (error) {
+    toast.error("Error fetching task details");
+    return <div>Error loading task details</div>;
+  }
+ 
+
 
   return (
     <div className='w-full flex flex-col gap-3 mb-4 overflow-y-hidden'>
-      <h1 className='text-2xl text-gray-600 font-bold'>{task?.title}</h1>
+      <h1 className='text-2xl text-gray-600 font-bold'>{taskdata?.title}</h1>
 
       <Tabs tabs={TABS} setSelected={setSelected}>
         {selected === 0 ? (
@@ -106,40 +107,40 @@ const TaskDetails = () => {
                   <div
                     className={clsx(
                       "flex gap-1 items-center text-base font-semibold px-3 py-1 rounded-full",
-                      PRIOTITYSTYELS[task?.priority],
-                      bgColor[task?.priority]
+                      PRIOTITYSTYELS[taskdata?.priority],
+                      bgColor[taskdata?.priority]
                     )}
                   >
-                    <span className='text-lg'>{ICONS[task?.priority]}</span>
-                    <span className='uppercase'>{task?.priority} Priority</span>
+                    <span className='text-lg'>{ICONS[taskdata?.priority]}</span>
+                    <span className='uppercase'>{taskdata?.priority} Priority</span>
                   </div>
 
                   <div className={clsx("flex items-center gap-2")}>
                     <div
                       className={clsx(
                         "w-4 h-4 rounded-full",
-                        TASK_TYPE[task.stage]
+                        TASK_TYPE[taskdata.stage]
                       )}
                     />
-                    <span className='text-black uppercase'>{task?.stage}</span>
+                    <span className='text-black uppercase'>{taskdata?.stage}</span>
                   </div>
                 </div>
 
                 <p className='text-gray-500'>
-                  Created At: {new Date(task?.date).toDateString()}
+                  Created At: {new Date(taskdata?.date).toDateString()}
                 </p>
 
                 <div className='flex items-center gap-8 p-4 border-y border-gray-200'>
                   <div className='space-x-2'>
                     <span className='font-semibold'>Assets :</span>
-                    <span>{task?.assets?.length}</span>
+                    <span>{taskdata?.assets?.length}</span>
                   </div>
 
                   <span className='text-gray-400'>|</span>
 
                   <div className='space-x-2'>
                     <span className='font-semibold'>Sub-Task :</span>
-                    <span>{task?.subTasks?.length}</span>
+                    <span>{taskdata?.subTasks?.length}</span>
                   </div>
                 </div>
 
@@ -148,7 +149,7 @@ const TaskDetails = () => {
                     TASK TEAM
                   </p>
                   <div className='space-y-3'>
-                    {task?.team?.map((m, index) => (
+                    {taskdata?.team?.members.map((member, index) => (
                       <div
                         key={index}
                         className='flex gap-4 py-2 items-center border-t border-gray-200'
@@ -159,13 +160,14 @@ const TaskDetails = () => {
                           }
                         >
                           <span className='text-center'>
-                            {getInitials(m?.name)}
+                            {getInitials(member)}
                           </span>
                         </div>
 
                         <div>
-                          <p className='text-lg font-semibold'>{m?.name}</p>
-                          <span className='text-gray-500'>{m?.title}</span>
+                          <p className='text-lg font-semibold'>{member}</p>
+                          {/* You can replace this with actual titles if you have that data */}
+                          <span className='text-gray-500'>Title</span>
                         </div>
                       </div>
                     ))}
@@ -177,7 +179,7 @@ const TaskDetails = () => {
                     SUB-TASKS
                   </p>
                   <div className='space-y-8'>
-                    {task?.subTasks?.map((el, index) => (
+                    {taskdata?.subTasks?.map((el, index) => (
                       <div key={index} className='flex gap-3'>
                         <div className='w-10 h-10 flex items-center justify-center rounded-full bg-violet-50-200'>
                           <MdTaskAlt className='text-violet-600' size={26} />
@@ -206,11 +208,11 @@ const TaskDetails = () => {
                 <p className='text-lg font-semibold'>ASSETS</p>
 
                 <div className='w-full grid grid-cols-2 gap-4'>
-                  {task?.assets?.map((el, index) => (
+                  {taskdata?.assets?.map((el, index) => (
                     <img
                       key={index}
                       src={el}
-                      alt={task?.title}
+                      alt={taskdata?.title}
                       className='w-full rounded h-28 md:h-36 2xl:h-52 cursor-pointer transition-all duration-700 hover:scale-125 hover:z-50'
                     />
                   ))}
@@ -220,14 +222,13 @@ const TaskDetails = () => {
           </>
         ) : (
           <>
-            <Activities activity={task?.activities} id={id} />
+            <Activities activity={taskdata?.activities} id={id} />
           </>
         )}
       </Tabs>
     </div>
   );
 };
-
 const Activities = ({ activity, id }) => {
   const [selected, setSelected] = useState(act_types[0]);
   const [text, setText] = useState("");
