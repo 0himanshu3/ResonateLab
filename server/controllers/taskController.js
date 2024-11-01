@@ -1,22 +1,29 @@
 import Notice from "../models/notification.js";
 import Task from "../models/task.js";
 import User from "../models/user.js";
+import Team from "../models/team.js"
 
 export const createTask = async (req, res) => {
   try {
-    console.log("req is", req.body); // Log req.body instead of req
+    console.log("req is", req.body);
     const { userId } = req.user;
 
-    const { title, team, stage, date, priority, assets, assignedMembers, teamId } = req.body;
+    const { title, team: teamId, stage, date, priority, assets, assignedMembers } = req.body;
 
     let text = "New task has been assigned to you";
-    if (team?.length > 1) {
-      text = text + ` and ${team.length - 1} others.`;
+    
+    // Fetch the team using the team ID
+    const team = await Team.findById(teamId).populate('members'); // Assuming members are user references
+
+    if (!team) {
+      return res.status(404).json({ status: false, message: "Team not found" });
     }
 
-    text =
-      text +
-      ` The task priority is set as ${priority} priority, so check and act accordingly. The task date is ${new Date(date).toDateString()}. Thank you!!!`;
+    if (team.members.length > 1) {
+      text += ` and ${team.members.length - 1} others.`;
+    }
+
+    text += ` The task priority is set as ${priority} priority, so check and act accordingly. The task date is ${new Date(date).toDateString()}. Thank you!!!`;
 
     const activity = {
       type: "assigned",
@@ -28,23 +35,33 @@ export const createTask = async (req, res) => {
     const task = await Task.create({
       title,
       team: {
-        id: team.id, // Save team ID as a reference
-        members: team.members.map(memberArray => memberArray[0].email),// Save team members
+        id: team._id,
+        members: team.members.map(member => member._id), // Store user IDs of team members
       },
       stage: stage.toLowerCase(),
       date,
       priority: priority.toLowerCase(),
       assets,
-      activities: [activity], // Wrap in an array
-      assignedMembers, // Save the array of assigned user emails or IDs
+      activities: [activity],
+      assignedMembers,
     });
 
     // Create the notice
     await Notice.create({
-      team,
+      team: teamId,
       text,
       task: task._id,
     });
+
+    // Push the task ID to all members of the team
+    const teamMemberIds = team.members.map(member => member._id); // Get IDs of all team members
+
+    for (const memberId of teamMemberIds) {
+      await User.findByIdAndUpdate(
+        memberId,
+        { $addToSet: { tasks: task._id } } // Push the task ID to each user's tasks array
+      );
+    }
 
     res.status(200).json({ status: true, task, message: "Task created successfully." });
   } catch (error) {
@@ -52,6 +69,7 @@ export const createTask = async (req, res) => {
     return res.status(400).json({ status: false, message: error.message });
   }
 };
+
 
 
 export const duplicateTask = async (req, res) => {

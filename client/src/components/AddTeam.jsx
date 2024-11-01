@@ -2,20 +2,19 @@ import React, { useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify"; // Import toast for notifications
 
-const AddTeam = ({ open, setOpen, creatorEmail }) => {
+const AddTeam = ({ open, setOpen, creatorID }) => {
   const [teamName, setTeamName] = useState("");
   const [error, setError] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const newTeam = { teamName, members: [{ email: creatorEmail }] };
-
-    try {
-      console.log(newTeam);
-      const response = await axios.post("/api/team/create", newTeam);
+    const newTeam = { teamName, members: [creatorID], creator: creatorID };
+console.log(newTeam);
+try {
+  const response = await axios.post("/api/team/create", newTeam);
 
       if (response.status === 201) { 
-        toast.success("Team Created Successfully."); // Show success notification
+        toast.success("Team Created Successfully."); 
         setTeamName(""); 
         setOpen(false); 
       } else {
@@ -62,5 +61,6 @@ const AddTeam = ({ open, setOpen, creatorEmail }) => {
     )
   );
 };
+
 
 export default AddTeam;

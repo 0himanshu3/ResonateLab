@@ -20,25 +20,27 @@ const AddTask = ({ open, setOpen, addTask }) => {
     formState: { errors },
   } = useForm();
 
-  const [team, setTeam] = useState([]);
-  const [members, setMembers] = useState([]); // State for managing assigned members
+  const [team, setTeam] = useState(null); // Changed to null to represent no team selected
+  const [members, setMembers] = useState([]); 
   const [stage, setStage] = useState(LISTS[0]);
   const [priority, setPriority] = useState(PRIORIRY[2]);
   const [assets, setAssets] = useState([]);
   const [uploading, setUploading] = useState(false);
 
   const submitHandler = async (data) => {
+    if (!team) {
+      alert("Please select a team.");
+      return;
+    }
+
     const taskData = {
       title: data.title,
-      team,
+      team: team.id, 
       assignedMembers: members, 
       stage,
       date: data.date,
       priority,
     };
-    console.log("taskdata is", taskData);
-    const z = team.members.map(memberArray => memberArray[0].email);
-    console.log(z);
     try {
       setUploading(true);
       const token = localStorage.getItem("token");

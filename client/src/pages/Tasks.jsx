@@ -33,15 +33,15 @@ const Tasks = () => {
   const [tasks, setTasks] = useState([]);
   const status = params?.status || "";
   const { user } = useSelector((state) => state.auth); 
-
+  // console.log(user);
   // Fetch tasks from the backend
+  //presently irrelevant will modify this
   useEffect(() => {
     const fetchTasks = async () => {
       try {
-    
         const response = await axios.get('/api/task', {
           params: {
-            userId: user?._id 
+            userId: user?._id
           }
         });
         setTasks(response.data.tasks);

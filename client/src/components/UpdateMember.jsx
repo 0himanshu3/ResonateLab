@@ -14,38 +14,28 @@ const UpdateMember = ({ open, setOpen, teamData }) => {
     }
   
     try {
-      // Check if the email exists in the database using a query parameter
       const response = await axios.get("/api/user/info", {
-        params: { memberEmail: memberEmail }, // Send memberEmail as a parameter
+        params: { memberEmail },
       });
-  
-      console.log(response.data);
-  
       if (response.data.status && response.data.user) {
-        console.log("Exists");
         const updateResponse = await axios.put(`/api/team/teams/${teamData._id}`, {
             memberEmail,
-          }, {
-            headers: { "Content-Type": "application/json" },
-          });
-  
-        console.log(updateResponse); // Log the update response
+      });
   
         if (updateResponse.status === 200) {
-          toast.success("Member Added Successfully."); // Show success notification
+          toast.success("Member Added Successfully.");
           setOpen(false);
         } else {
-          console.error("Failed to update team:", updateResponse);
           setError("Failed to add member.");
         }
       } else {
         setError("No user found with this email.");
       }
     } catch (error) {
-      console.error("Error adding member:", error);
       setError("Error adding member. Please try again.");
     }
   };
+  
   
 
   return (

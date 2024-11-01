@@ -1,6 +1,6 @@
 import clsx from "clsx";
 import moment from "moment";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react"; // Import useEffect
 import { FaBug, FaTasks, FaThumbsUp, FaUser } from "react-icons/fa";
 import { GrInProgress } from "react-icons/gr";
 import {
@@ -19,6 +19,8 @@ import { PRIOTITYSTYELS, TASK_TYPE, getInitials } from "../utils";
 import Loading from "../components/Loader";
 import Button from "../components/Button";
 import { useFetchTaskByIdQuery } from "../redux/slices/apiSlice";
+import Activities from "../components/Activities";
+import axios from "axios"; // Import axios
 
 const ICONS = {
   high: <MdKeyboardDoubleArrowUp />,
@@ -79,19 +81,47 @@ const act_types = [
   "Assigned",
 ];
 
+// Function to fetch the team name
+const getTeamName = async (teamId) => {
+  try {
+    const response = await axios.get(`/api/team/teamName/${teamId}`);
+    if (response.status !== 200) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    const data = response.data;
+    return data.name || "N/A";
+  } catch (error) {
+    console.error("Error fetching team name:", error);
+    return "N/A"; // Return "N/A" in case of an error
+  }
+};
+
 const TaskDetails = () => {
   const { id } = useParams();
  
   const { data: task, error, isLoading } = useFetchTaskByIdQuery(id);
-   const taskdata=task?.task;
+  const taskdata = task?.task;
+ 
   const [selected, setSelected] = useState(0);
+  const [teamName, setTeamName] = useState("Loading..."); // State to hold team name
+
+  // Fetch the team name when the task data is available
+  useEffect(() => {
+    const fetchTeamName = async () => {
+      if (taskdata?.team?.id) { // Assuming team ID is stored in taskdata
+        const name = await getTeamName(taskdata.team.id);
+        setTeamName(name);
+      }
+    };
+
+    fetchTeamName();
+  }, [taskdata]); // Dependency on taskdata to fetch when it changes
+  
   if (isLoading) return <Loading />;
   if (error) {
     toast.error("Error fetching task details");
     return <div>Error loading task details</div>;
   }
- 
-
 
   return (
     <div className='w-full flex flex-col gap-3 mb-4 overflow-y-hidden'>
@@ -143,13 +173,14 @@ const TaskDetails = () => {
                     <span>{taskdata?.subTasks?.length}</span>
                   </div>
                 </div>
-
+                
                 <div className='space-y-4 py-6'>
-                  <p className='text-gray-600 font-semibold test-sm'>
-                    TASK TEAM
+                  <p className='text-gray-600 font-semibold text-sm'>
+                    ASSIGNED TASK TEAM
                   </p>
+                  <p className='text-gray-600 font-semibold text-lg'>{teamName}</p> {/* Display the team name */}
                   <div className='space-y-3'>
-                    {taskdata?.team?.members.map((member, index) => (
+                    {taskdata?.assignedMembers?.map((member, index) => (
                       <div
                         key={index}
                         className='flex gap-4 py-2 items-center border-t border-gray-200'
@@ -166,14 +197,12 @@ const TaskDetails = () => {
 
                         <div>
                           <p className='text-lg font-semibold'>{member}</p>
-                          {/* You can replace this with actual titles if you have that data */}
                           <span className='text-gray-500'>Title</span>
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
-
                 <div className='space-y-4 py-6'>
                   <p className='text-gray-500 font-semibold text-sm'>
                     SUB-TASKS
@@ -222,95 +251,10 @@ const TaskDetails = () => {
           </>
         ) : (
           <>
-            <Activities activity={taskdata?.activities} id={id} />
+            <Activities activity={taskdata?.activities} />
           </>
         )}
       </Tabs>
-    </div>
-  );
-};
-const Activities = ({ activity, id }) => {
-  const [selected, setSelected] = useState(act_types[0]);
-  const [text, setText] = useState("");
-  const isLoading = false;
-
-  const handleSubmit = async () => {};
-
-  const Card = ({ item }) => {
-    return (
-      <div className='flex space-x-4'>
-        <div className='flex flex-col items-center flex-shrink-0'>
-          <div className='w-10 h-10 flex items-center justify-center'>
-            {TASKTYPEICON[item?.type]}
-          </div>
-          <div className='w-full flex items-center'>
-            <div className='w-0.5 bg-gray-300 h-full'></div>
-          </div>
-        </div>
-
-        <div className='flex flex-col gap-y-1 mb-8'>
-          <p className='font-semibold'>{item?.by?.name}</p>
-          <div className='text-gray-500 space-y-2'>
-            <span className='capitalize'>{item?.type}</span>
-            <span className='text-sm'>{moment(item?.date).fromNow()}</span>
-          </div>
-          <div className='text-gray-700'>{item?.activity}</div>
-        </div>
-      </div>
-    );
-  };
-
-  return (
-    <div className='w-full flex gap-10 2xl:gap-20 min-h-screen px-10 py-8 bg-white shadow rounded-md justify-between overflow-y-auto'>
-      <div className='w-full md:w-1/2'>
-        <h4 className='text-gray-600 font-semibold text-lg mb-5'>Activities</h4>
-
-        <div className='w-full'>
-          {activity?.map((el, index) => (
-            <Card
-              key={index}
-              item={el}
-              isConnected={index < activity.length - 1}
-            />
-          ))}
-        </div>
-      </div>
-
-      <div className='w-full md:w-1/3'>
-        <h4 className='text-gray-600 font-semibold text-lg mb-5'>
-          Add Activity
-        </h4>
-        <div className='w-full flex flex-wrap gap-5'>
-          {act_types.map((item, index) => (
-            <div key={item} className='flex gap-2 items-center'>
-              <input
-                type='checkbox'
-                className='w-4 h-4'
-                checked={selected === item ? true : false}
-                onChange={(e) => setSelected(item)}
-              />
-              <p>{item}</p>
-            </div>
-          ))}
-          <textarea
-            rows={10}
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder='Type ......'
-            className='bg-white w-full mt-10 border border-gray-300 outline-none p-4 rounded-md focus:ring-2 ring-blue-500'
-          ></textarea>
-          {isLoading ? (
-            <Loading />
-          ) : (
-            <Button
-              type='button'
-              label='Submit'
-              onClick={handleSubmit}
-              className='bg-blue-600 text-white rounded'
-            />
-          )}
-        </div>
-      </div>
     </div>
   );
 };

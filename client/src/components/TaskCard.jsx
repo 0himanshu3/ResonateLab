@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   MdAttachFile,
   MdKeyboardArrowDown,
@@ -14,6 +14,7 @@ import { FaList } from "react-icons/fa";
 import UserInfo from "./UserInfo";
 import { IoMdAdd } from "react-icons/io";
 import AddSubTask from "./task/AddSubTask";
+import axios from "axios";
 
 const ICONS = {
   high: <MdKeyboardDoubleArrowUp />,
@@ -24,6 +25,30 @@ const ICONS = {
 const TaskCard = ({ task }) => {
   const { user } = useSelector((state) => state.auth);
   const [open, setOpen] = useState(false);
+  const [teamName, setTeamName] = useState("Loading..."); // State to hold team name
+
+  const getTeamName = async (teamId) => {
+    try {
+      const response = await axios.get(`/api/team/teamName/${teamId}`);
+      if (response.status !== 200) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      const data = response.data; // Use response.data directly
+      return data.name || "N/A"; // Return the team name or "N/A"
+    } catch (error) {
+      console.error("Error fetching team name:", error);
+      return "N/A"; // Return "N/A" in case of an error
+    }
+  };
+
+  useEffect(() => {
+    const fetchTeamName = async () => {
+      const name = await getTeamName(task.team.id);
+      setTeamName(name); // Update state with the fetched team name
+    };
+
+    fetchTeamName(); // Call the async function
+  }, [task.team.id]); // Dependency array to run effect when teamId changes
 
   return (
     <>
@@ -39,19 +64,21 @@ const TaskCard = ({ task }) => {
             <span className='uppercase'>{task?.priority} Priority</span>
           </div>
 
-          {/* Removed admin condition for TaskDialog */}
           <TaskDialog task={task} />
         </div>
 
         <div className='flex items-center gap-2'>
-          <div
-            className={clsx("w-4 h-4 rounded-full", TASK_TYPE[task.stage])}
-          />
+          <div className={clsx("w-4 h-4 rounded-full", TASK_TYPE[task.stage])} />
           <h4 className='line-clamp-1 text-black'>{task?.title}</h4>
         </div>
         <span className='text-sm text-gray-600'>
           {formatDate(new Date(task?.date))}
         </span>
+
+        {/* Display Team Name */}
+        <div className='text-sm text-gray-800 font-medium mt-1'>
+          Team: {teamName}
+        </div>
 
         <div className='w-full border-t border-gray-200 my-2' />
         <div className='flex items-center justify-between mb-2'>
@@ -110,7 +137,6 @@ const TaskCard = ({ task }) => {
         <div className='w-full pb-2'>
           <button
             onClick={() => setOpen(true)}
-            // Removed admin condition to always enable button
             className='w-full flex gap-4 items-center text-sm text-gray-500 font-semibold'
           >
             <IoMdAdd className='text-lg' />
